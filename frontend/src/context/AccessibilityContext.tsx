@@ -1,0 +1,256 @@
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode, useCallback } from 'react'
+
+type ZoomLevel = 'normal' | 'large' | 'xlarge'
+export type Language = 'fr' | 'en'
+
+interface AccessibilityContextType {
+  zoom: ZoomLevel
+  setZoom: (level: ZoomLevel) => void
+  language: Language
+  setLanguage: (lang: Language) => void
+  autoReadSelection: boolean
+  setAutoReadSelection: (value: boolean) => void
+  stopSpeaking: () => void
+  speak: (text: string) => void
+  voiceCommandsActive: boolean
+  toggleVoiceCommands: () => void
+}
+
+const AccessibilityContext = createContext<AccessibilityContextType | undefined>(undefined)
+
+export function AccessibilityProvider({ children }: { children: ReactNode }) {
+  const [zoom, setZoomState] = useState<ZoomLevel>('normal')
+  const [language, setLanguageState] = useState<Language>('fr')
+  const [autoReadSelection, setAutoReadSelectionState] = useState(false)
+  const [voiceCommandsActive, setVoiceCommandsActive] = useState(false)
+
+  const recognitionRef = useRef<any>(null)
+
+  // Apply zoom to root font-size
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const root = document.documentElement
+    const base = 16
+    const factor = zoom === 'normal' ? 1 : zoom === 'large' ? 1.15 : 1.3
+    root.style.fontSize = `${base * factor}px`
+  }, [zoom])
+
+  // Apply language to <html lang="">
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    document.documentElement.lang = language === 'fr' ? 'fr' : 'en'
+  }, [language])
+
+  const setZoom = useCallback((level: ZoomLevel) => {
+    setZoomState(level)
+  }, [])
+
+  const setLanguage = useCallback((lang: Language) => {
+    setLanguageState(lang)
+  }, [])
+
+  const speak = useCallback(
+    (text: string) => {
+      if (typeof window === 'undefined') return
+      const synth = window.speechSynthesis
+      if (!synth) {
+        alert("La synthese vocale n'est pas supportee par ce navigateur.")
+        return
+      }
+      synth.cancel()
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = language === 'fr' ? 'fr-FR' : 'en-US'
+      synth.speak(utterance)
+    },
+    [language],
+  )
+
+  const speakSelection = useCallback(() => {
+    if (typeof window === 'undefined') return
+    const selection = window.getSelection()?.toString().trim()
+    if (!selection) return
+    speak(selection)
+  }, [speak])
+
+  const stopSpeaking = useCallback(() => {
+    if (typeof window === 'undefined') return
+    const synth = window.speechSynthesis
+    if (!synth) return
+    synth.cancel()
+  }, [])
+
+  // Automatic reading when selection changes and switch is ON
+  useEffect(() => {
+    if (!autoReadSelection) return
+    if (typeof document === 'undefined') return
+
+    let lastSelection = ''
+
+    const handler = () => {
+      const selection = window.getSelection()?.toString().trim() ?? ''
+      if (!selection || selection === lastSelection) return
+      lastSelection = selection
+      speakSelection()
+    }
+
+    document.addEventListener('mouseup', handler)
+    document.addEventListener('keyup', handler)
+
+    return () => {
+      document.removeEventListener('mouseup', handler)
+      document.removeEventListener('keyup', handler)
+    }
+  }, [autoReadSelection, speakSelection])
+
+  const handleVoiceCommand = useCallback(
+    (text: string) => {
+      const raw = text.trim()
+      const lower = raw.toLowerCase()
+
+      let detail: any = { raw, command: lower }
+
+      const unknownMessage =
+        language === 'fr'
+          ? "Je ne comprends pas votre commande vocale."
+          : "I don't understand your voice command."
+
+      const dispatchDetail = () => {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('skillup-voice-command', {
+              detail,
+            }),
+          )
+        }
+      }
+
+      // Submit / login
+      if (/(login|se connecter|connexion|sign in)/.test(lower)) {
+        detail.type = 'submit'
+        dispatchDetail()
+        return
+      }
+
+      // Email command: "email admin@example.com"
+      if (/(email|adresse mail|mail)/.test(lower)) {
+        const idx =
+          lower.indexOf('email') !== -1
+            ? lower.indexOf('email') + 'email'.length
+            : lower.indexOf('adresse mail') !== -1
+              ? lower.indexOf('adresse mail') + 'adresse mail'.length
+              : lower.indexOf('mail') + 'mail'.length
+
+        const value = raw.slice(idx).trim()
+        if (!value) {
+          speak(unknownMessage)
+          return
+        }
+        detail.type = 'email'
+        detail.value = value
+        dispatchDetail()
+        return
+      }
+
+      // Password command: "mot de passe xxx" / "password xxx"
+      if (/(mot de passe|password)/.test(lower)) {
+        const idx =
+          lower.indexOf('mot de passe') !== -1
+            ? lower.indexOf('mot de passe') + 'mot de passe'.length
+            : lower.indexOf('password') + 'password'.length
+
+        const value = raw.slice(idx).trim()
+        if (!value) {
+          speak(unknownMessage)
+          return
+        }
+        detail.type = 'password'
+        detail.value = value
+        dispatchDetail()
+        return
+      }
+
+      // Unknown command -> speak error
+      speak(unknownMessage)
+    },
+    [language, speak],
+  )
+
+  const toggleVoiceCommands = useCallback(() => {
+    if (typeof window === 'undefined') return
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+
+    if (!SpeechRecognition) {
+      alert('Les commandes vocales ne sont pas supportees par ce navigateur.')
+      return
+    }
+
+    if (voiceCommandsActive) {
+      recognitionRef.current?.stop()
+      recognitionRef.current = null
+      setVoiceCommandsActive(false)
+      return
+    }
+
+    const recognition = new SpeechRecognition()
+    recognition.lang = language === 'fr' ? 'fr-FR' : 'en-US'
+    recognition.continuous = true
+    recognition.interimResults = false
+
+    recognition.onresult = (event: any) => {
+      const lastResult = event.results[event.results.length - 1]
+      const transcript = lastResult[0].transcript
+      handleVoiceCommand(transcript)
+    }
+
+    recognition.onerror = () => {
+      setVoiceCommandsActive(false)
+      recognitionRef.current = null
+    }
+
+    recognition.onend = () => {
+      // relancer automatiquement tant que l'utilisateur souhaite les commandes
+      if (voiceCommandsActive) {
+        recognition.start()
+      }
+    }
+
+    recognition.start()
+    recognitionRef.current = recognition
+    setVoiceCommandsActive(true)
+  }, [handleVoiceCommand, language, voiceCommandsActive])
+
+  useEffect(
+    () => () => {
+      recognitionRef.current?.stop()
+    },
+    [],
+  )
+
+  return (
+    <AccessibilityContext.Provider
+      value={{
+        zoom,
+        setZoom,
+        language,
+        setLanguage,
+        autoReadSelection,
+        setAutoReadSelection: setAutoReadSelectionState,
+        stopSpeaking,
+        speak,
+        voiceCommandsActive,
+        toggleVoiceCommands,
+      }}
+    >
+      {children}
+    </AccessibilityContext.Provider>
+  )
+}
+
+export function useAccessibility() {
+  const ctx = useContext(AccessibilityContext)
+  if (!ctx) throw new Error('useAccessibility must be used within AccessibilityProvider')
+  return ctx
+}
+
