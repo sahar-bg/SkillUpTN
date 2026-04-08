@@ -1452,12 +1452,13 @@ export class RecommendationService {
   }
 
   async getMyRecommendations(employeeId: string) {
-    return this.recommendationModel
-      .find({ userId: new Types.ObjectId(employeeId) })
-      .populate('activityId', 'titre title date location description')
-      .sort({ created_at: -1 })
-      .exec()
-  }
+      return this.recommendationModel
+        .find({ userId: new Types.ObjectId(employeeId) })
+        .populate('activityId', 'titre title date startDate endDate location description')
+        .sort({ created_at: -1 })
+        .exec()
+    }
+
 
   async getMySkillUpdates(employeeId: string) {
     const rows = await this.activityHistoryModel
