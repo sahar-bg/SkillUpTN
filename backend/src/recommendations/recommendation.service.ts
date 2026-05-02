@@ -13,11 +13,14 @@ import { Department, DepartmentDocument } from '../users/schemas/department.sche
 import { QuestionCompetence, QuestionCompetenceDocument } from '../users/schemas/question-competence.schema'
 import { Recommendation, RecommendationDocument } from './schemas/recommendation.schema'
 import { ActivityHistory, ActivityHistoryDocument } from './schemas/activity-history.schema'
+import { PostActivityEvaluation, PostActivityEvaluationDocument } from './schemas/post-activity-evaluation.schema'
 import { NotificationsService } from '../notifications/notifications.service'
 import { MailService } from '../mail/mail.service'
 import { NotificationType } from '../notifications/schemas/notification.schema'
 import { AuditService } from '../audit/audit.service'
 import { SearchRecommendationsDto } from './dto/search-recommendations.dto'
+import { PostActivitySelfEvalDto } from './dto/post-activity-self-eval.dto'
+import { PostActivityManagerEvalDto } from './dto/post-activity-manager-eval.dto'
 import { SmsService } from '../sms/sms.service'
 import { TransportEstimateDto } from './dto/transport-estimate.dto'
 
@@ -45,6 +48,7 @@ export class RecommendationService {
     @InjectModel(Department.name) private readonly departmentModel: Model<DepartmentDocument>,
     @InjectModel(Recommendation.name) private readonly recommendationModel: Model<RecommendationDocument>,
     @InjectModel(ActivityHistory.name) private readonly activityHistoryModel: Model<ActivityHistoryDocument>,
+    @InjectModel(PostActivityEvaluation.name) private readonly postActivityEvaluationModel: Model<PostActivityEvaluationDocument>,
     private readonly notificationService: NotificationsService,
     private readonly mailService: MailService,
     private readonly auditService: AuditService,
@@ -1697,6 +1701,297 @@ export class RecommendationService {
       return response.data
     } catch {
       throw new HttpException('AI retraining failed', HttpStatus.SERVICE_UNAVAILABLE)
+    }
+  }
+
+  /**
+   * Employee submits self-evaluation after activity completion
+   */
+  async submitPostActivitySelfEval(dto: PostActivitySelfEvalDto, userId: string) {
+    const rec = await this.recommendationModel.findById(dto.recommendationId).exec()
+    if (!rec) throw new HttpException('Recommendation not found', HttpStatus.NOT_FOUND)
+    if (rec.userId.toString() !== userId) {
+      throw new HttpException('Employee can only submit self-evaluation for own recommendations', HttpStatus.FORBIDDEN)
+    }
+
+    const evaluation = await this.postActivityEvaluationModel.findOneAndUpdate(
+      {
+        activityId: rec.activityId,
+        recommendationId: new Types.ObjectId(dto.recommendationId),
+        userId: new Types.ObjectId(userId),
+      },
+      {
+        $set: {
+          'skills.$[elem].auto_eval': dto.skills.find((s) => s.intitule === '$[elem].intitule')?.auto_eval,
+          employee_submitted_at: new Date(),
+        },
+        $setOnInsert: {
+          activityId: rec.activityId,
+          recommendationId: new Types.ObjectId(dto.recommendationId),
+          userId: new Types.ObjectId(userId),
+          skills: dto.skills.map((s) => ({ intitule: s.intitule, auto_eval: s.auto_eval })),
+        },
+      },
+      { upsert: true, new: true },
+    )
+
+    // Update skills array properly
+    const existingEval = await this.postActivityEvaluationModel.findOne({
+      activityId: rec.activityId,
+      recommendationId: new Types.ObjectId(dto.recommendationId),
+      userId: new Types.ObjectId(userId),
+    })
+
+    if (existingEval) {
+      const updatedSkills = existingEval.skills.map((skill) => {
+        const newSkill = dto.skills.find((s) => s.intitule === skill.intitule)
+        if (newSkill) {
+          return { ...skill, auto_eval: newSkill.auto_eval }
+        }
+        return skill
+      })
+
+      // Add new skills that don't exist
+      dto.skills.forEach((newSkill) => {
+        if (!updatedSkills.find((s) => s.intitule === newSkill.intitule)) {
+          updatedSkills.push({ intitule: newSkill.intitule, auto_eval: newSkill.auto_eval })
+        }
+      })
+
+      existingEval.skills = updatedSkills
+      existingEval.employee_submitted_at = new Date()
+      await existingEval.save()
+    }
+
+    await this.auditService.logAction({
+      domain: 'recommendations',
+      action: 'post_activity_self_eval',
+      actorId: userId,
+      actorRole: 'EMPLOYEE',
+      entityType: 'PostActivityEvaluation',
+      entityId: evaluation._id.toString(),
+      after: { recommendationId: dto.recommendationId, skills: dto.skills },
+    })
+
+    return { success: true, evaluationId: evaluation._id.toString() }
+  }
+
+  /**
+   * Manager submits evaluation after activity completion
+   */
+  async submitPostActivityManagerEval(dto: PostActivityManagerEvalDto, userId: string) {
+    const manager = await this.userModel.findById(this.resolveUserId(userId)).select('_id role department_id').exec()
+    if (!manager || !['MANAGER', 'manager'].includes(String(manager.role))) {
+      throw new HttpException('Only managers can submit manager evaluations', HttpStatus.FORBIDDEN)
+    }
+
+    const rec = await this.recommendationModel.findById(dto.recommendationId).populate('activityId').exec()
+    if (!rec) throw new HttpException('Recommendation not found', HttpStatus.NOT_FOUND)
+
+    const activity = rec.activityId as any
+    const activityDepartment = await this.getDepartmentByActivity(activity)
+    if (!activityDepartment || manager.department_id?.toString() !== activityDepartment._id.toString()) {
+      throw new HttpException('Manager can only evaluate activities in their department', HttpStatus.FORBIDDEN)
+    }
+
+    const existingEval = await this.postActivityEvaluationModel.findOne({
+      activityId: rec.activityId,
+      recommendationId: new Types.ObjectId(dto.recommendationId),
+      userId: rec.userId,
+    })
+
+    if (existingEval) {
+      const updatedSkills = existingEval.skills.map((skill) => {
+        const newSkill = dto.skills.find((s) => s.intitule === skill.intitule)
+        if (newSkill) {
+          return { ...skill, hierarchie_eval: newSkill.hierarchie_eval }
+        }
+        return skill
+      })
+
+      // Add new skills that don't exist
+      dto.skills.forEach((newSkill) => {
+        if (!updatedSkills.find((s) => s.intitule === newSkill.intitule)) {
+          updatedSkills.push({ intitule: newSkill.intitule, hierarchie_eval: newSkill.hierarchie_eval })
+        }
+      })
+
+      existingEval.skills = updatedSkills
+      existingEval.manager_submitted_at = new Date()
+      await existingEval.save()
+
+      await this.auditService.logAction({
+        domain: 'recommendations',
+        action: 'post_activity_manager_eval',
+        actorId: userId,
+        actorRole: 'MANAGER',
+        entityType: 'PostActivityEvaluation',
+        entityId: existingEval._id.toString(),
+        after: { recommendationId: dto.recommendationId, skills: dto.skills },
+      })
+
+      return { success: true, evaluationId: existingEval._id.toString() }
+    } else {
+      const evaluation = await this.postActivityEvaluationModel.create({
+        activityId: rec.activityId,
+        recommendationId: new Types.ObjectId(dto.recommendationId),
+        userId: rec.userId,
+        skills: dto.skills.map((s) => ({ intitule: s.intitule, hierarchie_eval: s.hierarchie_eval })),
+        manager_submitted_at: new Date(),
+      })
+
+      await this.auditService.logAction({
+        domain: 'recommendations',
+        action: 'post_activity_manager_eval',
+        actorId: userId,
+        actorRole: 'MANAGER',
+        entityType: 'PostActivityEvaluation',
+        entityId: evaluation._id.toString(),
+        after: { recommendationId: dto.recommendationId, skills: dto.skills },
+      })
+
+      return { success: true, evaluationId: evaluation._id.toString() }
+    }
+  }
+
+  /**
+   * HR triggers post-activity skill update for all participants
+   */
+  async runPostActivityUpdate(activityId: string, userId: string) {
+    const hr = await this.userModel.findById(this.resolveUserId(userId)).select('_id role').exec()
+    if (!hr || !['HR', 'hr'].includes(String(hr.role))) {
+      throw new HttpException('Only HR can trigger post-activity updates', HttpStatus.FORBIDDEN)
+    }
+
+    const activity = await this.activityModel.findById(activityId).exec()
+    if (!activity) throw new HttpException('Activity not found', HttpStatus.NOT_FOUND)
+
+    const evaluations = await this.postActivityEvaluationModel
+      .find({ activityId: new Types.ObjectId(activityId) })
+      .exec()
+
+    let updatedCount = 0
+    for (const evaluation of evaluations) {
+      if (evaluation.update_applied_at) continue // Skip already applied
+
+      const rec = await this.recommendationModel.findById(evaluation.recommendationId).exec()
+      if (!rec) continue
+
+      // Apply skill updates based on evaluations
+      const skillUpdates = evaluation.skills.map((skill) => ({
+        intitule: skill.intitule,
+        auto_eval: skill.auto_eval ?? 0,
+        hierarchie_eval: skill.hierarchie_eval ?? 0,
+        final_niveau: Math.round(((skill.auto_eval ?? 0) + (skill.hierarchie_eval ?? 0)) / 2),
+      }))
+
+      // Update employee's competences
+      const employee = await this.userModel.findById(evaluation.userId).exec()
+      if (employee) {
+        const fiche = await this.ficheModel.findOne({ userId: employee._id }).exec()
+        if (fiche) {
+          for (const skillUpdate of skillUpdates) {
+            const existingComp = await this.competenceModel.findOne({
+              fiches_id: fiche._id,
+              intitule: skillUpdate.intitule,
+            }).exec()
+
+            if (existingComp) {
+              // Update evaluations with the new values
+              existingComp.auto_eval = Math.max(existingComp.auto_eval ?? 0, skillUpdate.auto_eval)
+              existingComp.hierarchie_eval = Math.max(existingComp.hierarchie_eval ?? 0, skillUpdate.hierarchie_eval)
+              await existingComp.save()
+            } else {
+              // Find the question_competence_id for this skill
+              const questionComp = await this.questionCompetenceModel.findOne({
+                intitule: skillUpdate.intitule,
+              }).exec()
+
+              if (questionComp) {
+                await this.competenceModel.create({
+                  fiches_id: fiche._id,
+                  question_competence_id: questionComp._id,
+                  type: questionComp.type ?? 'hard',
+                  intitule: skillUpdate.intitule,
+                  auto_eval: skillUpdate.auto_eval,
+                  hierarchie_eval: skillUpdate.hierarchie_eval,
+                  etat: 'validated',
+                })
+              }
+            }
+          }
+        }
+      }
+
+      // Create activity history record
+      await this.activityHistoryModel.create({
+        userId: evaluation.userId,
+        activityId: new Types.ObjectId(activityId),
+        activity_title: (activity as any).title ?? (activity as any).titre ?? 'Activité',
+        status: 'completed',
+        feedback: 'Compétences mises à jour suite à l\'évaluation post-activité',
+        completed_at: new Date(),
+        skill_updates: skillUpdates,
+      })
+
+      evaluation.update_applied_at = new Date()
+      await evaluation.save()
+      updatedCount++
+    }
+
+    await this.auditService.logAction({
+      domain: 'recommendations',
+      action: 'post_activity_update',
+      actorId: userId,
+      actorRole: 'HR',
+      entityType: 'Activity',
+      entityId: activityId,
+      after: { updated_count: updatedCount },
+    })
+
+    return { success: true, updated_count: updatedCount }
+  }
+
+  /**
+   * Get post-activity evaluation status for an activity
+   */
+  async getPostActivityStatus(activityId: string) {
+    const activity = await this.activityModel.findById(activityId).exec()
+    if (!activity) throw new HttpException('Activity not found', HttpStatus.NOT_FOUND)
+
+    const recommendations = await this.recommendationModel
+      .find({ activityId: new Types.ObjectId(activityId), status: 'ACCEPTED' })
+      .populate('userId', 'name email')
+      .exec()
+
+    const evaluations = await this.postActivityEvaluationModel
+      .find({ activityId: new Types.ObjectId(activityId) })
+      .exec()
+
+    const status = recommendations.map((rec) => {
+      const evaluation = evaluations.find((e) => e.recommendationId.toString() === rec._id.toString())
+      return {
+        recommendationId: rec._id.toString(),
+        employee: {
+          id: (rec.userId as any)._id.toString(),
+          name: (rec.userId as any).name,
+          email: (rec.userId as any).email,
+        },
+        self_eval_submitted: !!evaluation?.employee_submitted_at,
+        manager_eval_submitted: !!evaluation?.manager_submitted_at,
+        update_applied: !!evaluation?.update_applied_at,
+        skills: evaluation?.skills ?? [],
+      }
+    })
+
+    return {
+      activityId,
+      activity_title: (activity as any).title ?? (activity as any).titre ?? 'Activité',
+      total_participants: recommendations.length,
+      self_eval_completed: status.filter((s) => s.self_eval_submitted).length,
+      manager_eval_completed: status.filter((s) => s.manager_eval_submitted).length,
+      updates_applied: status.filter((s) => s.update_applied).length,
+      participants: status,
     }
   }
 
