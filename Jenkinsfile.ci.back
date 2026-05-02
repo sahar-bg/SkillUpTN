@@ -1,6 +1,14 @@
 pipeline {
     agent any
 
+    tools {
+        nodejs 'Node20'
+    }
+
+    environment {
+        CD_BACK_JOB = 'CD-Back'
+    }
+
     options {
         skipDefaultCheckout(true)
     }
@@ -11,52 +19,98 @@ pipeline {
             steps {
                 echo "🔄 CI BACK – Checkout du repository..."
                 deleteDir()
-                git branch: 'main', url: 'https://github.com/medamin87737/SkillUpTnFrontBack.git'
+                git branch: 'main', url: 'https://github.com/medamin87737/-PIfullstackJS-4TWIN6-2026-EspritHub.git'
             }
         }
 
-        stage('SonarQube Analysis (Backend)') {
+        stage('Install (Backend)') {
             steps {
-                echo "🔍 Analyse SonarQube du backend..."
-                withSonarQubeEnv('SonarQube') {
+                echo "📦 Installation des dépendances backend..."
+                dir('backend') {
                     script {
-                        def scannerHome = tool 'SonarScanner'
-                        sh """
-                          "${scannerHome}/bin/sonar-scanner" \
-                            -Dsonar.projectKey=SkillUpTN-Backend \
-                            -Dsonar.projectName=SkillUpTN-Backend \
-                            -Dsonar.sources=backend
-                        """
+                        if (isUnix()) {
+                            sh 'npm ci || npm install'
+                        } else {
+                            bat 'npm ci || npm install'
+                        }
                     }
                 }
             }
         }
 
-        stage('Build Docker Image (Backend)') {
+        stage('Test (Backend)') {
             steps {
-                echo "🛠 Build de l'image Docker du backend (CI)..."
-                sh 'docker-compose build backend'
+                echo "🧪 Exécution des tests backend..."
+                dir('backend') {
+                    script {
+                        if (isUnix()) {
+                            sh 'if npm run | grep -q "test:ci"; then npm run test:ci; else npm run test; fi'
+                        } else {
+                            bat 'npm run test:ci || npm run test'
+                        }
+                    }
+                }
             }
         }
 
-        stage('Run Backend Tests') {
+        stage('SonarQube Analysis (Backend)') {
+            when {
+                expression { return isUnix() } // simplifie: analyse Sonar sur agent Linux
+            }
             steps {
-                echo "🧪 Lancement des tests backend dans le conteneur..."
-                script {
-                    // Évite les conflits de nom de conteneur si un ancien Mongo / backend existe déjà
-                    sh 'docker stop skillup-mongo || true'
-                    sh 'docker rm skillup-mongo || true'
-                    sh 'docker stop skillup-backend || true'
-                    sh 'docker rm skillup-backend || true'
+                echo "📊 Analyse SonarQube backend..."
+                dir('backend') {
+                    script {
+                        def scannerHome = tool 'SonarScanner'
+                        // Le nom "SonarQubeServer" doit correspondre à la config de ton serveur dans Jenkins (Manage Jenkins > Configure System > SonarQube servers)
+                        withSonarQubeEnv('SonarQubeServer') {
+                            sh """
+                                "${scannerHome}/bin/sonar-scanner" \
+                                  -Dsonar.projectKey=skillup-backend \
+                                  -Dsonar.projectName="SkillUp Backend" \
+                                  -Dsonar.sources=src \
+                                  -Dsonar.tests=src \
+                                  -Dsonar.test.inclusions=**/*.spec.ts,**/*.test.ts \
+                                  -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                                  -Dsonar.sourceEncoding=UTF-8
+                            """
+                        }
+                    }
+                }
+            }
+        }
 
-                    sh 'docker-compose run --rm backend npm run test'
+        stage('Build (Backend)') {
+            steps {
+                echo "🏗 Build backend..."
+                dir('backend') {
+                    script {
+                        if (isUnix()) {
+                            sh 'npm run build'
+                        } else {
+                            bat 'npm run build'
+                        }
+                    }
                 }
             }
         }
     }
 
     post {
-        success { echo "✅ CI BACK terminé avec succès" }
+        always {
+            archiveArtifacts artifacts: 'backend/coverage/**', allowEmptyArchive: true
+        }
+        success {
+            echo "✅ CI BACK terminé avec succès"
+            echo "🚀 Déclenchement automatique du pipeline CD backend..."
+            script {
+                // Si le job CD n'existe pas (ou a un nom différent / est dans un folder),
+                // on ne veut pas faire passer le CI en FAILURE.
+                catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+                    build job: env.CD_BACK_JOB, wait: false
+                }
+            }
+        }
         failure { echo "❌ CI BACK échoué" }
     }
 }

@@ -1,8 +1,15 @@
 pipeline {
     agent any
 
+    tools {
+        nodejs 'Node20'
+    }
+
+    environment {
+        CD_FRONT_JOB = 'CD-Front'
+    }
+
     options {
-        // On gère nous‑mêmes le checkout
         skipDefaultCheckout(true)
     }
 
@@ -12,37 +19,93 @@ pipeline {
             steps {
                 echo "🔄 CI FRONT – Checkout du repository..."
                 deleteDir()
-                git branch: 'main', url: 'https://github.com/medamin87737/SkillUpTnFrontBack.git'
+                git branch: 'main', url: 'https://github.com/medamin87737/-PIfullstackJS-4TWIN6-2026-EspritHub.git'
             }
         }
 
-        stage('SonarQube Analysis (Frontend)') {
+        stage('Install (Frontend)') {
             steps {
-                echo "🔍 Analyse SonarQube du frontend..."
-                withSonarQubeEnv('SonarQube') {
+                echo "📦 Installation des dépendances frontend..."
+                dir('frontend') {
                     script {
-                        def scannerHome = tool 'SonarScanner'
-                        sh """
-                          "${scannerHome}/bin/sonar-scanner" \
-                            -Dsonar.projectKey=SkillUpTN-Frontend \
-                            -Dsonar.projectName=SkillUpTN-Frontend \
-                            -Dsonar.sources=frontend
-                        """
+                        if (isUnix()) {
+                            sh 'npm ci || npm install'
+                            sh 'npm install --no-save --include=optional @rollup/rollup-linux-x64-gnu || true'
+                        } else {
+                            bat 'npm ci || npm install'
+                        }
                     }
                 }
             }
         }
 
-        stage('Build Docker Image (Frontend)') {
+        stage('Test (Frontend)') {
             steps {
-                echo "🛠 Build de l'image Docker du frontend (CI)..."
-                sh 'docker-compose build frontend'
+                echo "🧪 Exécution des tests frontend..."
+                dir('frontend') {
+                    script {
+                        if (isUnix()) {
+                            sh 'if npm run | grep -q "test:ci"; then npm run test:ci; else npm run test; fi'
+                        } else {
+                            bat 'npm run test:ci || npm run test'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('SonarQube Analysis (Frontend)') {
+            when {
+                expression { return isUnix() } // simplifie: analyse Sonar sur agent Linux
+            }
+            steps {
+                echo "📊 Analyse SonarQube frontend..."
+                dir('frontend') {
+                    script {
+                        def scannerHome = tool 'SonarScanner'
+                        // Le nom "SonarQubeServer" doit correspondre à la config de ton serveur dans Jenkins
+                        withSonarQubeEnv('SonarQubeServer') {
+                            sh """
+                                "${scannerHome}/bin/sonar-scanner" \
+                                  -Dsonar.projectKey=skillup-frontend \
+                                  -Dsonar.projectName="SkillUp Frontend" \
+                                  -Dsonar.sources=src \
+                                  -Dsonar.tests=src \
+                                  -Dsonar.test.inclusions=**/*.spec.ts,**/*.spec.tsx,**/*.test.ts,**/*.test.tsx \
+                                  -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                                  -Dsonar.sourceEncoding=UTF-8
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build (Frontend)') {
+            steps {
+                echo "🏗 Build frontend..."
+                dir('frontend') {
+                    script {
+                        if (isUnix()) {
+                            sh 'npm run build'
+                        } else {
+                            bat 'npm run build'
+                        }
+                    }
+                }
             }
         }
     }
 
     post {
-        success { echo "✅ CI FRONT terminé avec succès" }
+        always {
+            archiveArtifacts artifacts: 'frontend/coverage/**, frontend/reports/**', allowEmptyArchive: true
+        }
+        success {
+            echo "✅ CI FRONT terminé avec succès"
+            echo "🚀 Déclenchement automatique du pipeline CD frontend..."
+            build job: env.CD_FRONT_JOB, wait: false
+        }
         failure { echo "❌ CI FRONT échoué" }
     }
 }

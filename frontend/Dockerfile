@@ -8,7 +8,11 @@ ARG VITE_API_URL
 ENV VITE_API_URL=${VITE_API_URL}
 
 COPY package*.json ./
-RUN npm install
+# Force un registry stable et évite les URLs codées en dur vers cdn.npmmirror
+# dans le package-lock en supprimant le lock dans l'image.
+RUN npm config set registry https://registry.npmjs.org/ \
+  && rm -f package-lock.json pnpm-lock.yaml yarn.lock \
+  && npm install --no-audit --no-fund --no-progress
 COPY . .
 
 # Le build Vite lit VITE_API_URL et la "bake" dans le frontend
