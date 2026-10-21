@@ -254,7 +254,7 @@ npm install leaflet react-leaflet @types/leaflet
 
 ```env
 # .env
-VITE_MAPBOX_TOKEN=your_mapbox_token_here
+VITE_MAPBOX_TOKEN=pk.YOUR_MAPBOX_TOKEN_HERE
 ```
 
 #### Modèle de Données (Backend)
@@ -1123,7 +1123,7 @@ const translateText = useCallback(async (text: string, targetLang: string): Prom
 VITE_OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxx
 
 # Mapbox (Location Picker)
-VITE_MAPBOX_TOKEN=your_mapbox_token_here
+VITE_MAPBOX_TOKEN=pk.YOUR_MAPBOX_TOKEN_HERE
 
 # Puter.js (Translation) - 100% FREE, UNLIMITED, NO API KEY
 # Just add the CDN script to index.html:
