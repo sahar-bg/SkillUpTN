@@ -1,0 +1,283 @@
+[1mdiff --git a/.kiro/specs/hr-chatbot-rasa/tasks.md b/.kiro/specs/hr-chatbot-rasa/tasks.md[m
+[1mindex 1085cbe..3d2cc23 100644[m
+[1m--- a/.kiro/specs/hr-chatbot-rasa/tasks.md[m
+[1m+++ b/.kiro/specs/hr-chatbot-rasa/tasks.md[m
+[36m@@ -82,7 +82,7 @@[m [mL'implémentation suit trois axes parallèles qui convergent:[m
+     - Gérer le cas où l'activité n'existe pas (throw NotFoundException)[m
+     - _Exigences: 2.1, 2.3, 12.3_[m
+   [m
+[31m-  - [~] 8.3 Écrire un test de propriété pour la récupération des données d'activité[m
+[32m+[m[32m  - [ ] 8.3 Écrire un test de propriété pour la récupération des données d'activité[m
+     - **Property 3: Récupération des données d'activité**[m
+     - **Valide: Exigences 2.1, 2.2**[m
+   [m
+[36m@@ -91,7 +91,7 @@[m [mL'implémentation suit trois axes parallèles qui convergent:[m
+     - Fournir des valeurs par défaut pour les champs manquants[m
+     - _Exigences: 2.2, 2.4, 2.5, 12.5_[m
+   [m
+[31m-  - [~] 8.5 Écrire un test de propriété pour l'enrichissement du contexte[m
+[32m+[m[32m  - [ ] 8.5 Écrire un test de propriété pour l'enrichissement du contexte[m
+     - **Property 4: Enrichissement du contexte**[m
+     - **Valide: Exigences 2.4, 2.5**[m
+   [m
+[36m@@ -103,12 +103,12 @@[m [mL'implémentation suit trois axes parallèles qui convergent:[m
+     - Gérer les erreurs Rasa 4xx/5xx (logger et throw InternalServerErrorException)[m
+     - _Exigences: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 12.4_[m
+   [m
+[31m-  - [~] 8.7 Écrire des tests unitaires pour les cas d'erreur Rasa[m
+[32m+[m[32m  - [ ] 8.7 Écrire des tests unitaires pour les cas d'erreur Rasa[m
+     - Tester erreur de connexion → 503[m
+     - Tester erreur Rasa 4xx/5xx → 500 avec logging[m
+     - _Exigences: 3.4, 3.5_[m
+   [m
+[31m-  - [~] 8.8 Écrire un test de propriété pour la communication avec Rasa[m
+[32m+[m[32m  - [ ] 8.8 Écrire un test de propriété pour la communication avec Rasa[m
+     - **Property 5: Communication avec Rasa**[m
+     - **Valide: Exigences 3.1, 3.2**[m
+ [m
+[36m@@ -120,15 +120,15 @@[m [mL'implémentation suit trois axes parallèles qui convergent:[m
+     - Retourner ChatResponseDto[m
+     - _Exigences: 1.1, 1.2, 1.5, 12.1_[m
+   [m
+[31m-  - [~] 9.2 Écrire un test de propriété pour la validation des payloads valides[m
+[32m+[m[32m  - [ ] 9.2 Écrire un test de propriété pour la validation des payloads valides[m
+     - **Property 1: Validation des payloads valides**[m
+     - **Valide: Exigences 1.2, 1.5**[m
+   [m
+[31m-  - [~] 9.3 Écrire un test de propriété pour le rejet des payloads invalides[m
+[32m+[m[32m  - [ ] 9.3 Écrire un test de propriété pour le rejet des payloads invalides[m
+     - **Property 2: Rejet des payloads invalides**[m
+     - **Valide: Exigences 1.3, 1.4**[m
+   [m
+[31m-  - [~] 9.4 Écrire des tests unitaires pour les cas d'erreur spécifiques[m
+[32m+[m[32m  - [ ] 9.4 Écrire des tests unitaires pour les cas d'erreur spécifiques[m
+     - Tester message vide → 400[m
+     - Tester activityId vide → 400[m
+     - Tester activité non trouvée → 404[m
+[36m@@ -142,7 +142,7 @@[m [mL'implémentation suit trois axes parallèles qui convergent:[m
+   - S'assurer que les logs ne contiennent pas de données sensibles[m
+   - _Exigences: 15.1, 15.2, 15.3, 15.4, 15.5_[m
+ [m
+[31m-- [~] 11. Checkpoint Backend - Tester l'API avec Postman/curl[m
+[32m+[m[32m- [ ] 11. Checkpoint Backend - Tester l'API avec Postman/curl[m
+   - Vérifier que POST /api/chat accepte les requêtes valides[m
+   - Vérifier que les erreurs de validation retournent 400[m
+   - Vérifier que les activités non trouvées retournent 404[m
+[36m@@ -176,7 +176,7 @@[m [mL'implémentation suit trois axes parallèles qui convergent:[m
+     - Afficher un message d'erreur si invalide[m
+     - _Exigences: 20.3_[m
+   [m
+[31m-  - [~] 14.3 Écrire un test de propriété pour la validation de activityId[m
+[32m+[m[32m  - [ ] 14.3 Écrire un test de propriété pour la validation de activityId[m
+     - **Property 30: Validation de activityId**[m
+     - **Valide: Exigences 20.3**[m
+   [m
+[36m@@ -191,11 +191,11 @@[m [mL'implémentation suit trois axes parallèles qui convergent:[m
+     - Vider le champ de saisie après envoi[m
+     - _Exigences: 10.2, 10.3, 10.4, 10.5, 18.1, 18.2_[m
+   [m
+[31m-  - [~] 14.5 Écrire un test de propriété pour l'ajout immédiat des messages utilisateur[m
+[32m+[m[32m  - [ ] 14.5 Écrire un test de propriété pour l'ajout immédiat des messages utilisateur[m
+     - **Property 26: Ajout immédiat des messages utilisateur**[m
+     - **Valide: Exigences 18.2**[m
+   [m
+[31m-  - [~] 14.6 Écrire des tests unitaires pour la gestion des erreurs[m
+[32m+[m[32m  - [ ] 14.6 Écrire des tests unitaires pour la gestion des erreurs[m
+     - Tester erreur réseau → message d'erreur convivial[m
+     - Tester erreur backend 4xx/5xx → message d'erreur approprié[m
+     - _Exigences: 10.4, 10.5_[m
+[36m@@ -205,7 +205,7 @@[m [mL'implémentation suit trois axes parallèles qui convergent:[m
+     - Utiliser messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })[m
+     - _Exigences: 8.6_[m
+   [m
+[31m-  - [~] 14.8 Écrire un test de propriété pour le scroll automatique[m
+[32m+[m[32m  - [ ] 14.8 Écrire un test de propriété pour le scroll automatique[m
+     - **Property 16: Scroll automatique**[m
+     - **Valide: Exigences 8.6**[m
+   [m
+[36m@@ -214,7 +214,7 @@[m [mL'implémentation suit trois axes parallèles qui convergent:[m
+     - Envoyer le message si la touche est 'Enter' et le champ n'est pas vide[m
+     - _Exigences: 18.1_[m
+   [m
+[31m-  - [~] 14.10 Écrire un test de propriété pour l'envoi via touche Entrée[m
+[32m+[m[32m  - [ ] 14.10 Écrire un test de propriété pour l'envoi via touche Entrée[m
+     - **Property 25: Envoi via touche Entrée**[m
+     - **Valide: Exigences 18.1**[m
+ [m
+[36m@@ -234,11 +234,11 @@[m [mL'implémentation suit trois axes parallèles qui convergent:[m
+     - Garder les boutons visibles après envoi[m
+     - _Exigences: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6_[m
+   [m
+[31m-  - [~] 15.3 Écrire un test de propriété pour l'envoi via suggestions[m
+[32m+[m[32m  - [ ] 15.3 Écrire un test de propriété pour l'envoi via suggestions[m
+     - **Property 19: Envoi via suggestions**[m
+     - **Valide: Exigences 9.5**[m
+   [m
+[31m-  - [~] 15.4 Écrire un test de propriété pour la persistance des suggestions[m
+[32m+[m[32m  - [ ] 15.4 Écrire un test de propriété pour la persistance des suggestions[m
+     - **Property 20: Persistance des suggestions**[m
+     - **Valide: Exigences 9.6**[m
+   [m
+[36m@@ -248,11 +248,11 @@[m [mL'implémentation suit trois axes parallèles qui convergent:[m
+     - Désactiver le bouton d'envoi pendant isLoading[m
+     - _Exigences: 11.1, 11.2, 11.3, 11.4, 11.5_[m
+   [m
+[31m-  - [~] 15.6 Écrire un test de propriété pour l'affichage du loader[m
+[32m+[m[32m  - [ ] 15.6 Écrire un test de propriété pour l'affichage du loader[m
+     - **Property 17: Affichage du loader**[m
+     - **Valide: Exigences 8.7, 11.1, 11.3, 11.4, 11.5**[m
+   [m
+[31m-  - [~] 15.7 Écrire des tests unitaires pour la structure de l'interface[m
+[32m+[m[32m  - [ ] 15.7 Écrire des tests unitaires pour la structure de l'interface[m
+     - Vérifier que l'input field existe[m
+     - Vérifier que le bouton "Envoyer" existe[m
+     - Vérifier que les suggestions sont affichées[m
+[36m@@ -269,7 +269,7 @@[m [mL'implémentation suit trois axes parallèles qui convergent:[m
+     - Styles pour l'indicateur de chargement[m
+     - _Exigences: 8.2, 8.3, 13.5_[m
+   [m
+[31m-  - [~] 16.2 Écrire un test de propriété pour l'alignement des messages[m
+[32m+[m[32m  - [ ] 16.2 Écrire un test de propriété pour l'alignement des messages[m
+     - **Property 15: Alignement des messages**[m
+     - **Valide: Exigences 8.2, 8.3**[m
+   [m
+[36m@@ -279,7 +279,7 @@[m [mL'implémentation suit trois axes parallèles qui convergent:[m
+     - S'assurer qu'il n'y a pas de débordement horizontal[m
+     - _Exigences: 8.8_[m
+   [m
+[31m-  - [~] 16.4 Écrire un test de propriété pour le responsive design[m
+[32m+[m[32m  - [ ] 16.4 Écrire un test de propriété pour le responsive design[m
+     - **Property 18: Responsive design**[m
+     - **Valide: Exigences 8.8**[m
+   [m
+[36m@@ -289,17 +289,17 @@[m [mL'implémentation suit trois axes parallèles qui convergent:[m
+     - Ajouter des aria-labels pour les boutons[m
+     - _Exigences: 19.1, 19.2, 19.3_[m
+   [m
+[31m-  - [~] 16.6 Écrire un test de propriété pour le contraste des couleurs[m
+[32m+[m[32m  - [ ] 16.6 Écrire un test de propriété pour le contraste des couleurs[m
+     - **Property 29: Contraste des couleurs**[m
+     - **Valide: Exigences 19.3**[m
+ [m
+[31m-- [~] 17. Implémentation de l'accessibilité clavier[m
+[32m+[m[32m- [ ] 17. Implémentation de l'accessibilité clavier[m
+   - Vérifier que tous les éléments interactifs sont accessibles via Tab[m
+   - Implémenter la navigation au clavier (Tab, Entrée, Espace)[m
+   - Gérer le focus correctement après les interactions[m
+   - _Exigences: 19.4_[m
+ [m
+[31m-- [~] 17.1 Écrire un test de propriété pour la navigation au clavier[m
+[32m+[m[32m- [ ] 17.1 Écrire un test de propriété pour la navigation au clavier[m
+   - **Property 28: Navigation au clavier**[m
+   - **Valide: Exigences 19.4**[m
+ [m
+[36m@@ -310,18 +310,18 @@[m [mL'implémentation suit trois axes parallèles qui convergent:[m
+   - Tester l'intégration complète[m
+ [m
+ - [ ] 19. Tests d'intégration end-to-end[m
+[31m-  - [~] 19.1 Écrire un test E2E pour le flux complet[m
+[32m+[m[32m  - [ ] 19.1 Écrire un test E2E pour le flux complet[m
+     - Démarrer Rasa, backend et frontend[m
+     - Simuler l'envoi d'un message "Explique cette activité"[m
+     - Vérifier que la réponse du bot apparaît[m
+     - Vérifier que le temps de réponse est < 3 secondes[m
+     - _Exigences: 18.3_[m
+   [m
+[31m-  - [~] 19.2 Écrire un test E2E pour les suggestions rapides[m
+[32m+[m[32m  - [ ] 19.2 Écrire un test E2E pour les suggestions rapides[m
+     - Cliquer sur "Pourquoi recommandé ?"[m
+     - Vérifier que le message est envoyé et la réponse reçue[m
+   [m
+[31m-  - [~] 19.3 Écrire un test E2E pour la gestion des erreurs[m
+[32m+[m[32m  - [ ] 19.3 Écrire un test E2E pour la gestion des erreurs[m
+     - Arrêter Rasa[m
+     - Envoyer un message[m
+     - Vérifier que l'erreur 503 est gérée correctement[m
+[36m@@ -332,7 +332,7 @@[m [mL'implémentation suit trois axes parallèles qui convergent:[m
+   - Créer un script de démarrage pour lancer Rasa, backend et frontend ensemble[m
+   - Ajouter des commentaires JSDoc pour les fonctions principales[m
+ [m
+[31m-- [~] 21. Checkpoint Final - Vérifier que tout fonctionne[m
+[32m+[m[32m- [ ] 21. Checkpoint Final - Vérifier que tout fonctionne[m
+   - Démarrer Rasa avec `rasa run --enable-api --cors '*'`[m
+   - Démarrer le backend NestJS[m
+   - Démarrer le frontend React[m
+[1mdiff --git a/ai-service/feedback_events.jsonl b/ai-service/feedback_events.jsonl[m
+[1mindex 63f23d2..41c85e9 100644[m
+[1m--- a/ai-service/feedback_events.jsonl[m
+[1m+++ b/ai-service/feedback_events.jsonl[m
+[36m@@ -83,3 +83,5 @@[m
+ {"recommendation_id": "69d02f301e01f5f818795564", "added_employees": [], "removed_employees": [], "timestamp": "2026-04-03T21:22:21.206513", "source": "manager_feedback", "activity_id": "69d02ada1e01f5f81879459e", "employee_id": "69c116b724bd5e16194ff720", "stage": "manager_validation", "outcome": "approved", "note": "", "score_total": 0.6622, "score_nlp": 0.2475, "score_competences": 0.0}[m
+ {"recommendation_id": "69d02f301e01f5f818795565", "activity_id": "69d02ada1e01f5f81879459e", "employee_id": "69c116b724bd5e16194ff8ac", "stage": "manager_validation", "outcome": "approved", "note": "", "score_total": 0.6632, "score_nlp": 0.3155, "score_competences": 0.0}[m
+ {"recommendation_id": "69d02f301e01f5f818795565", "added_employees": [], "removed_employees": [], "timestamp": "2026-04-03T21:22:21.242612", "source": "manager_feedback", "activity_id": "69d02ada1e01f5f81879459e", "employee_id": "69c116b724bd5e16194ff8ac", "stage": "manager_validation", "outcome": "approved", "note": "", "score_total": 0.6632, "score_nlp": 0.3155, "score_competences": 0.0}[m
+[32m+[m[32m{"recommendation_id": "69d02f301e01f5f818795564", "activity_id": "69d02ada1e01f5f81879459e", "employee_id": "69c116b724bd5e16194ff720", "stage": "employee_response", "outcome": "accepted", "note": "", "score_total": 0.6622, "score_nlp": 0.2475, "score_competences": 0.0}[m
+[32m+[m[32m{"recommendation_id": "69d02f301e01f5f818795564", "added_employees": [], "removed_employees": [], "timestamp": "2026-04-04T12:52:02.846129", "source": "manager_feedback", "activity_id": "69d02ada1e01f5f81879459e", "employee_id": "69c116b724bd5e16194ff720", "stage": "employee_response", "outcome": "accepted", "note": "", "score_total": 0.6622, "score_nlp": 0.2475, "score_competences": 0.0}[m
+[1mdiff --git a/backend/env.example b/backend/env.example[m
+[1mindex f4c82b9..1abed4e 100644[m
+[1m--- a/backend/env.example[m
+[1m+++ b/backend/env.example[m
+[36m@@ -39,4 +39,12 @@[m [mOPENROUTER_STRICT=false[m
+ # Obtenez vos credentials sur https://console.twilio.com[m
+ TWILIO_ACCOUNT_SID=your_twilio_account_sid[m
+ TWILIO_AUTH_TOKEN=your_twilio_auth_token[m
+[31m-TWILIO_PHONE_NUMBER=+1XXXXXXXXXX[m
+\ No newline at end of file[m
+[32m+[m[32mTWILIO_PHONE_NUMBER=+1XXXXXXXXXX[m
+[32m+[m
+[32m+[m[32m# Translation Service[m
+[32m+[m[32m# Google Cloud Translation API Key[m
+[32m+[m[32mGOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here[m
+[32m+[m[32m# Redis URL for translation cache[m
+[32m+[m[32mREDIS_URL=redis://localhost:6379[m
+[32m+[m[32m# Translation cache TTL in seconds (default: 86400 = 24 hours)[m
+[32m+[m[32mTRANSLATION_CACHE_TTL=86400[m
+\ No newline at end of file[m
+[1mdiff --git a/backend/package-lock.json b/backend/package-lock.json[m
+[1mindex 0faa35f..b499bba 100644[m
+[1m--- a/backend/package-lock.json[m
+[1m+++ b/backend/package-lock.json[m
+[36m@@ -26,6 +26,7 @@[m
+         "bcrypt": "^6.0.0",[m
+         "class-transformer": "^0.5.1",[m
+         "class-validator": "^0.14.3",[m
+[32m+[m[32m        "crypto": "^1.0.1",[m
+         "handlebars": "^4.7.8",[m
+         "jspdf": "^4.2.1",[m
+         "jspdf-autotable": "^5.0.7",[m
+[36m@@ -4192,6 +4193,17 @@[m
+         "node": ">= 18"[m
+       }[m
+     },[m
+[32m+[m[32m    "node_modules/bignumber.js": {[m
+[32m+[m[32m      "version": "9.3.1",[m
+[32m+[m[32m      "resolved": "https://registry.npmjs.org/bignumber.js/-/bignumber.js-9.3.1.tgz",[m
+[32m+[m[32m      "integrity": "sha512-Ko0uX15oIUS7wJ3Rb30Fs6SkVbLmPBAKdlm7q9+ak9bbIeFf0MwuBsQV6z7+X768/cHsfg+WlysDWJcmthjsjQ==",[m
+[32m+[m[32m      "license": "MIT",[m
+[32m+[m[32m      "optional": true,[m
+[32m+[m[32m      "peer": true,[m
+[32m+[m[32m      "engines": {[m
+[32m+[m[32m        "node": "*"[m
+[32m+[m[32m      }[m
+[32m+[m[32m    },[m
+     "node_modules/bl": {[m
+       "version": "4.1.0",[m
+       "resolved": "https://registry.npmjs.org/bl/-/bl-4.1.0.tgz",[m
+[36m@@ -4949,6 +4961,13 @@[m
+         "node": ">= 8"[m
+       }[m
+     },[m
+[32m+[m[32m    "node_modules/crypto": {[m
+[32m+[m[32m      "version": "1.0.1",[m
+[32m+[m[32m      "resolved": "https://registry.npmjs.org/crypto/-/crypto-1.0.1.tgz",[m
+[32m+[m[32m      "integrity": "sha512-VxBKmeNcqQdiUQUW2Tzq0t377b54N2bMtXO/qiLa+6eRRmmC4qT3D4OnTGoT/U6O9aklQ/jTwbOtRMTTY8G0Ig==",[m
+[32m+[m[32m      "deprecated": "This package is no longer supported. It's now a built-in Node module. If you've depended on crypto, you should switch to the one that's built-in.",[m
+[32m+[m[32m      "license": "ISC"[m
+[32m+[m[32m    },[m
+     "node_modules/css-line-break": {[m
+       "version": "2.1.0",[m
+       "resolved": "https://registry.npmmirror.com/css-line-break/-/css-line-break-2.1.0.tgz",[m
+[36m@@ -4959,6 +4978,17 @@[m
+         "utrie": "^1.0.2"[m
+       }[m
+     },[m
+[32m+[m[32m 
